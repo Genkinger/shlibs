@@ -2,7 +2,7 @@
 #define TGA_LOADER_H
 
 #include <stdint.h>
-
+#include <stdbool.h>
 
 #define TGA_RGBA 0x00
 #define TGA_BGRA 0x01
@@ -32,28 +32,6 @@ struct tga_image_header
     u8  ImageDescriptor;
 };
 
-struct tga_image_extension_area
-{
-    u16     ExtensionSize;
-    u8      AuthorName[41];
-    u8      AuthorComments[324];
-    u16     Date[6];
-    u8      JobName[41];
-    u16     JobTime[3];
-    u8      SoftwareId[41];
-    u8      SoftwareVersion[3];
-    u32     KeyColor;
-    u16     PixelAspect[2];
-    u16     GammaValue[2];
-    u32     ColorCorrectionOffset;
-    u32     PostageStampOffset;
-    u32     ScanLineOffset;
-    u8      AttributesType;
-    void    *ScanLineTable;
-    void    *PostageStampImage;
-    u16     ColorCorrectionTable[1024];
-};
-
 struct tga_image_footer
 {
     u32     ExtensionAreaOffset;
@@ -67,14 +45,7 @@ struct tga_image
     void    *ImageId;
     void    *ColorMapData;
     u32     *ImageData;
-
-    /* NOT YET POPULATED */
-    void    *DeveloperFields;
-    void    *DeveloperDirectory;
-    struct  tga_image_extension_area ExtensionArea;
-    struct  tga_image_footer Footer;
-    
-    u8      Original;
+    struct  tga_image_footer Footer; 
 };
 
 
@@ -107,13 +78,8 @@ LoadTGA(const char* Path, u32 format){
     fseek(fp, -26, SEEK_END);
     fread(&Image->Footer, 1, sizeof(struct tga_image_footer), fp);
     
-    if(strncmp(Image->Footer.SignatureWithTerminator, "TRUEVISION-XFILE", 16) == 0)
-    { 
-        Image->Original = 0;
-    } 
-    else
+    if(strncmp(Image->Footer.SignatureWithTerminator, "TRUEVISION-XFILE", 16) != 0)
     {
-        Image->Original = 1;
         memset(&Image->Footer, 0, sizeof(struct tga_image_footer));
     }
 
@@ -210,10 +176,6 @@ LoadTGA(const char* Path, u32 format){
         }
     }
 
-    if(!Image->Original){      
-        //TODO: Load ExtensionArea and DeveloperArea
-    }
-    
     fclose(fp);
     
     return Image;
@@ -254,7 +216,7 @@ ComputePixel(u8 *input, u32 bytes, u32 format)
             }
             break;
         case 2:
-            LOG("not yet implemented... image will be black");
+            LOG("Not yet implemented... image will be black");
             break;
     }
     return res;
